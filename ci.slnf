@@ -1,0 +1,10 @@
+{
+  "solution": {
+    "path": "ComplexType.sln",
+    "projects": [
+      "ComplexType.Common\\ComplexType.Common.csproj",
+      "ComplexType.Generator\\ComplexType.Generator.csproj",
+      "ComplexType\\ComplexType.csproj",
+    ]
+  }
+}

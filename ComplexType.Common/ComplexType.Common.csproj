@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <TargetFramework>netstandard2.0</TargetFramework>
+	  <LangVersion>Latest</LangVersion>
+	  <RootNamespace>ComplexType</RootNamespace>
+	  <Description>Implementation of Complex Types. Common library</Description>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+	  <PackageProjectUrl>https://github.com/vicosanz/ComplexType</PackageProjectUrl>
+	  <RepositoryUrl>https://github.com/vicosanz/ComplexType</RepositoryUrl>
+	  <Authors>Victor Sanchez</Authors>
+	  <Company>Infoware Soluciones</Company>
+	  <Version>1.0.0</Version>
+	  <PackageReleaseNotes>Implementation of Complex Types. Common library</PackageReleaseNotes>
+  </PropertyGroup>
+
+</Project>

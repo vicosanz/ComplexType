@@ -7,10 +7,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.3.0
+      - uses: actions/checkout@v4.2.2
 
       - name: Setup dotnet
-        uses: actions/setup-dotnet@v4.0.0
+        uses: actions/setup-dotnet@v4.3.0
         with:
           dotnet-version: '9.0.x'
 

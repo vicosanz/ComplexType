@@ -16,9 +16,9 @@ namespace ComplexType.Generator
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            //#if DEBUG
-            //            if (!Debugger.IsAttached) Debugger.Launch();
-            //#endif
+//#if DEBUG
+//            if (!Debugger.IsAttached) Debugger.Launch();
+//#endif
             IncrementalValuesProvider<TypeDeclarationSyntax> typeDeclarations = context.SyntaxProvider
                 .CreateSyntaxProvider(
                     predicate: static (s, _) => s.IsSyntaxTargetForGeneration(),
@@ -64,7 +64,9 @@ namespace ComplexType.Generator
                     continue;
                 }
 
-                var innerType = "string";
+                var innerType = "string"; 
+                string? baseInnerType = null;
+
                 bool allowNulls = false;
                 string modifiers = type.GetModifiers();
                 var additionalConverters = new List<int>();
@@ -85,8 +87,37 @@ namespace ComplexType.Generator
                         {
                             var argumentsType = (GenericNameSyntax)baseType.Type;
                             innerType = argumentsType.TypeArgumentList.Arguments.First().ToFullString();
+                            if (argumentsType.TypeArgumentList.Arguments.Count > 1)
+                            {
+                                baseInnerType = argumentsType.TypeArgumentList.Arguments[1].ToFullString();
+                            }
                         }
                     }
+                }
+
+                if (baseInnerType == null && innerType != "string")
+                {
+                    baseInnerType = "string";
+                }
+
+                bool ValidateExist = false;
+                foreach (var member in type.Members)
+                {
+                    if (member.IsKind(SyntaxKind.MethodDeclaration))
+                    {
+                        var method = (MethodDeclarationSyntax)member;
+                        if (method.Identifier.Value?.ToString() == "Validate")
+                        {
+                            ValidateExist = true;
+                            if (!method.Modifiers.ToString().Contains("static"))
+                            {
+                                context.ReportDiagnostic(
+                                    Diagnostic.Create(DiagnosticDescriptors.ValidateMethodNotStatic, null, innerType)
+                                );
+                                continue;
+                            }
+                        }
+                    }   
                 }
 
                 foreach (var attribute in typeSymbol.GetAttributes())
@@ -113,7 +144,9 @@ namespace ComplexType.Generator
                                         typeSymbol.ToString(),
                                         modifiers,
                                         innerType,
-                                        additionalConverters));
+                                        baseInnerType,
+                                        additionalConverters,
+                                        ValidateExist));
             }
             return complexTypes;
         }

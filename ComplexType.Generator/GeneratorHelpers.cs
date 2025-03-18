@@ -6,6 +6,14 @@ namespace ComplexType.Generator
 {
     public static class GeneratorHelpers
     {
+        public static bool IsTypePrimitiveOrId(string type) => type switch
+        {
+            "string" or "bool" or "byte" or "DateTime" or "DateTimeOffset" or
+            "decimal" or "double" or "Guid" or "short" or "Ulid" or "int" or "sbyte" or "float" or
+            "TimeSpan" or "ushort" or "uint" or "char" or "long" or "ulong" => true,
+            _ => false
+        };
+
         public static string GetNamespace(this BaseTypeDeclarationSyntax syntax)
         {
             var result = string.Empty;

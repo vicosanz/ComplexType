@@ -101,6 +101,7 @@ namespace ComplexType.Generator
                 }
 
                 bool ValidateExist = false;
+                bool ConverterExist = false;
                 foreach (var member in type.Members)
                 {
                     if (member.IsKind(SyntaxKind.MethodDeclaration))
@@ -114,10 +115,26 @@ namespace ComplexType.Generator
                                 context.ReportDiagnostic(
                                     Diagnostic.Create(DiagnosticDescriptors.ValidateMethodNotStatic, null, innerType)
                                 );
-                                continue;
                             }
                         }
-                    }   
+                    }
+                    if (member.IsKind(SyntaxKind.PropertyDeclaration))
+                    {
+                        var property = (PropertyDeclarationSyntax)member;
+                        if (baseInnerType != null)
+                        {
+                            if (property.Identifier.Value?.ToString() == "Converter")
+                            {
+                                ConverterExist = true;
+                                if (!property.Modifiers.ToString().Contains("static"))
+                                {
+                                    context.ReportDiagnostic(
+                                        Diagnostic.Create(DiagnosticDescriptors.ConverterMethodNotStatic, null, innerType, baseInnerType)
+                                    );
+                                }
+                            }
+                        }
+                    }
                 }
 
                 foreach (var attribute in typeSymbol.GetAttributes())
@@ -146,7 +163,8 @@ namespace ComplexType.Generator
                                         innerType,
                                         baseInnerType,
                                         additionalConverters,
-                                        ValidateExist));
+                                        ValidateExist,
+                                        ConverterExist));
             }
             return complexTypes;
         }

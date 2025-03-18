@@ -17,7 +17,7 @@ namespace ComplexType.Generator
     /// <param name="AdditionalConverters"> Array of additional converters </param>
     public record Metadata(string Namespace, IReadOnlyList<string> Usings,
         bool AllowNulls, string Name, string NameTyped, string FullName, string Modifiers,
-        string InnerType, string? BaseInnerType, IReadOnlyList<int> AdditionalConverters, bool ValidateExist)
+        string InnerType, string? BaseInnerType, IReadOnlyList<int> AdditionalConverters, bool ValidateExist, bool ConverterExist)
     {
         /// <summary>
         /// The namespace found in the base struct
@@ -67,21 +67,11 @@ namespace ComplexType.Generator
         public IReadOnlyList<int> AdditionalConverters { get; internal set; } = AdditionalConverters;
 
         internal string GetBaseInnerType() => BaseInnerType ?? InnerType;
-        internal bool IsInnerTypePrimitiveOrId() => InnerType switch
-        {
-            "string" or "bool" or "byte" or "DateTime" or "DateTimeOffset" or
-            "decimal" or "double" or "Guid" or "short" or "Ulid" or "int" or "sbyte" or "float" or
-            "TimeSpan" or "ushort" or "uint" or "char" or "long" or "ulong" => true,
-            _ => false
-        };
-        internal bool IsBaseInnerTypePrimitiveOrId() => GetBaseInnerType() switch
-        {
-            "string" or "bool" or "byte" or "DateTime" or "DateTimeOffset" or
-            "decimal" or "double" or "Guid" or "short" or "Ulid" or "int" or "sbyte" or "float" or
-            "TimeSpan" or "ushort" or "uint" or "char" or "long" or "ulong" => true,
-            _ => false
-        };
+        internal bool IsInnerTypePrimitiveOrId() => GeneratorHelpers.IsTypePrimitiveOrId(InnerType);
+
+        internal bool IsBaseInnerTypePrimitiveOrId() => GeneratorHelpers.IsTypePrimitiveOrId(GetBaseInnerType());
         public bool ValidateExist { get; internal set; } = ValidateExist;
+        public bool ConverterExist { get; internal set; } = ConverterExist;
     }
 
 }

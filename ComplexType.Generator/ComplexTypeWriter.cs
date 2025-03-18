@@ -76,6 +76,83 @@
             WriteLine();
         }
 
+        private void WriteStatics()
+        {
+            WriteLine($"public {metadata.InnerType} Value {{ get; }} = Validate(Value);");
+
+            WriteLine();
+            WriteLine($"public static implicit operator {metadata.NameTyped}({metadata.InnerType} value) => new(value);");
+            WriteLine($"public static explicit operator {metadata.InnerType}({metadata.NameTyped} value) => value.Value;");
+            WriteLine($"public static {metadata.NameTyped} Parse({metadata.InnerType} value) => new(value);");
+            WriteBrace($"public static bool TryParse({metadata.InnerType} value, out {metadata.NameTyped} result)", () =>
+            {
+                WriteLine($"result = default;");
+                WriteBrace("try", () =>
+                {
+                    WriteLine("result = Parse(value);");
+                    WriteLine("return true;");
+                });
+                WriteBrace("catch", () =>
+                {
+                    WriteLine("return false;");
+                });
+            });
+            if (metadata.InnerType == "string")
+            {
+                WriteLine($"public override string ToString() => Value;");
+            }
+
+            if (metadata.InnerType == "Guid" || metadata.InnerType == "Ulid")
+            {
+                WriteLine($"public static {metadata.NameTyped} Empty => new({metadata.InnerType}.Empty);");
+                WriteLine();
+                WriteLine($"public static {metadata.NameTyped} Create() => new({metadata.InnerType}.New{metadata.InnerType}());");
+                WriteLine();
+                WriteLine($"public bool IsEmpty => Value == {metadata.InnerType}.Empty;");
+            }
+            else
+            {
+                WriteLine($"public static {metadata.NameTyped} Create({metadata.InnerType} value) => new(value);");
+            }
+
+            if (metadata.BaseInnerType != null)
+            {
+                WriteLine();
+                WriteLine($"public static implicit operator {metadata.NameTyped}({metadata.BaseInnerType} value) => new(Converter.Convert(value));");
+                WriteLine($"public static explicit operator {metadata.BaseInnerType}({metadata.NameTyped} value) => Converter.Convert(value.Value);");
+                WriteLine($"public static {metadata.NameTyped} Parse({metadata.BaseInnerType} value) => new(Converter.Convert(value));");
+                WriteBrace($"public static bool TryParse({metadata.BaseInnerType} value, out {metadata.NameTyped} result)", () =>
+                {
+                    WriteLine($"result = default;");
+                    WriteBrace("try", () =>
+                    {
+                        WriteLine("result = Converter.Convert(value);");
+                        WriteLine("return true;");
+                    });
+                    WriteBrace("catch", () =>
+                    {
+                        WriteLine("return false;");
+                    });
+                });
+                WriteLine($"public static {metadata.NameTyped} Create({metadata.BaseInnerType} value) => new(Converter.Convert(value));");
+
+                if (!metadata.ConverterExist && metadata.IsInnerTypePrimitiveOrId() && metadata.IsBaseInnerTypePrimitiveOrId())
+                {
+                    WriteLine();
+                    WriteLine($"public static AutoConverter<{metadata.InnerType}, {metadata.BaseInnerType}> Converter => new(x => x.ToString(), x=> {metadata.InnerType}.Parse(x));");
+                }
+                if (metadata.BaseInnerType == "string")
+                {
+                    WriteLine($"public override string ToString() => Converter.Convert(Value);");
+                }
+            }
+
+            if (!metadata.ValidateExist)
+            {
+                WriteLine($"public static {metadata.InnerType} Validate({metadata.InnerType} value, [CallerArgumentExpression(nameof(value))] string? argumentName = null) => value;");
+            }
+        }
+
         private void WriteTypeConverter()
         {
             WriteBrace($"public class {metadata.NameTyped}TypeConverter : TypeConverter", () =>
@@ -148,7 +225,7 @@
                     {
                         WriteBrace($"if (destinationType == BaseInnerType)", () =>
                         {
-                            WriteLine($"return {metadata.NameTyped}.ParseBase(result.Value);");
+                            WriteLine($"return {metadata.NameTyped}.Converter.Convert(result.Value);");
                         });
                     }
                 });
@@ -177,83 +254,6 @@
             WriteLine($"public override void Write(Utf8JsonWriter writer, {metadata.NameTyped} value, JsonSerializerOptions options) => JsonSerializer.Serialize(writer, value.Value, options);");
         }
 
-        private void WriteStatics()
-        {
-            WriteLine($"public {metadata.InnerType} Value {{ get; }} = Validate(Value);");
-
-            WriteLine();
-            WriteLine($"public static implicit operator {metadata.NameTyped}({metadata.InnerType} value) => new(value);");
-            WriteLine($"public static explicit operator {metadata.InnerType}({metadata.NameTyped} value) => value.Value;");
-            WriteLine($"public static {metadata.NameTyped} Parse({metadata.InnerType} value) => new(value);");
-            WriteBrace($"public static bool TryParse({metadata.InnerType} value, out {metadata.NameTyped} result)", () =>
-            {
-                WriteLine($"result = default;");
-                WriteBrace("try", () =>
-                {
-                    WriteLine("result = Parse(value);");
-                    WriteLine("return true;");
-                });
-                WriteBrace("catch", () =>
-                {
-                    WriteLine("return false;");
-                });
-            });
-            if (metadata.InnerType == "string")
-            {
-                WriteLine($"public override string ToString() => Value;");
-            }
-
-            if (metadata.InnerType == "Guid" || metadata.InnerType == "Ulid")
-            {
-                WriteLine($"public static {metadata.NameTyped} Empty => new({metadata.InnerType}.Empty);");
-                WriteLine();
-                WriteLine($"public static {metadata.NameTyped} Create() => new({metadata.InnerType}.New{metadata.InnerType}());");
-                WriteLine();
-                WriteLine($"public bool IsEmpty => Value == {metadata.InnerType}.Empty;");
-            }
-            else
-            {
-                WriteLine($"public static {metadata.NameTyped} Create({metadata.InnerType} value) => new(value);");
-            }
-
-            if (metadata.BaseInnerType != null)
-            {
-                WriteLine();
-                WriteLine($"public static implicit operator {metadata.NameTyped}({metadata.BaseInnerType} value) => new(ParseBase(value));");
-                WriteLine($"public static explicit operator {metadata.BaseInnerType}({metadata.NameTyped} value) => ParseBase(value.Value);");
-                WriteLine($"public static {metadata.NameTyped} Parse({metadata.BaseInnerType} value) => new(ParseBase(value));");
-                WriteBrace($"public static bool TryParse({metadata.BaseInnerType} value, out {metadata.NameTyped} result)", () =>
-                {
-                    WriteLine($"result = default;");
-                    WriteBrace("try", () =>
-                    {
-                        WriteLine("result = ParseBase(value);");
-                        WriteLine("return true;");
-                    });
-                    WriteBrace("catch", () =>
-                    {
-                        WriteLine("return false;");
-                    });
-                });
-                WriteLine($"public static {metadata.NameTyped} Create({metadata.BaseInnerType} value) => new(ParseBase(value));");
-
-                if (metadata.IsInnerTypePrimitiveOrId())
-                {
-                    WriteLine();
-                    WriteLine($"public static {metadata.InnerType} ParseBase({metadata.BaseInnerType} value) => {metadata.InnerType}.Parse(value);");
-                    WriteLine($"public static {metadata.BaseInnerType} ParseBase({metadata.InnerType} value) => value.ToString();");
-                }
-                if (metadata.BaseInnerType == "string")
-                {
-                    WriteLine($"public override string ToString() => ParseBase(Value);");
-                }
-            }
-
-            if (!metadata.ValidateExist)
-            {
-                WriteLine($"public static {metadata.InnerType} Validate({metadata.InnerType} value, [CallerArgumentExpression(nameof(value))] string? argumentName = null) => value;");
-            }
-        }
 
         private void WriteEfcore()
         {
@@ -268,7 +268,7 @@
                     {
                         WriteNested($": base(", ")", () =>
                         {
-                            WriteLine($"v => {metadata.NameTyped}.ParseBase(v.Value),");
+                            WriteLine($"v => {metadata.NameTyped}.Converter.Convert(v.Value),");
                             WriteLine($"v => {metadata.NameTyped}.Parse(v),");
                             WriteLine($"mappingHints");
                         });
@@ -314,7 +314,7 @@
                             }
                             else
                             {
-                                WriteLine($"v => {metadata.NameTyped}.ParseBase(v.Value),");
+                                WriteLine($"v => {metadata.NameTyped}.Converter.Convert(v.Value),");
                             }
                             WriteLine($"v => {metadata.NameTyped}.Parse(v),");
                             WriteLine($"mappingHints");
@@ -339,7 +339,7 @@
                     }
                     else
                     {
-                        WriteLine($"parameter.Value = {metadata.NameTyped}.ParseBase(value.Value);");
+                        WriteLine($"parameter.Value = {metadata.NameTyped}.Converter.Convert(value.Value);");
                     }
                 });
                 WriteLine();
@@ -354,7 +354,7 @@
                         }
                         else
                         {
-                            WriteLine($"{innerType} v => {metadata.NameTyped}.ParseBase(v),");
+                            WriteLine($"{innerType} v => {metadata.NameTyped}.Converter.Convert(v),");
                         }
                     }
                     WriteLine($"_ => throw new InvalidCastException($\"Unable to cast object of type {{value.GetType()}} to {metadata.NameTyped}\"),");

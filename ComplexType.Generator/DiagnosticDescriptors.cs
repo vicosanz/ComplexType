@@ -25,5 +25,14 @@ namespace ComplexType.Generator
                 DiagnosticSeverity.Warning,
                 true
             );
+        public static readonly DiagnosticDescriptor ConverterMethodNotStatic =
+            new(
+                "CTI003",
+                "Converter method must be declared as 'public static AutoConverter<{0}, {1}> Converter'",
+                "Converter method must be declared as 'public static AutoConverter<{0}, {1}> Converter'",
+                DiagnosticCategories.ComplexType,
+                DiagnosticSeverity.Warning,
+                true
+            );
     }
 }

@@ -140,7 +140,7 @@ Change the inner type to any primitive
     }
 ```
 
-Encapsulate incompatible or complex types, you must assign a primitive type and ParseBase in order to work with Dapper and EfCore.
+Encapsulate incompatible or complex types, you must assign a primitive type and a Converter in order to work with Dapper and EfCore.
 ```csharp
     [ComplexType([EnumAdditionalConverters.Dapper, EnumAdditionalConverters.EFCore, EnumAdditionalConverters.NewtonsoftJson])]
     public readonly partial record struct CultureData : IComplexType<CultureInfo, string>
@@ -156,8 +156,7 @@ Encapsulate incompatible or complex types, you must assign a primitive type and 
             return value;
         }
         //Convertibility between complex type (CultureInfo) and primitive (string)
-        public static CultureInfo ParseBase(string value) => AllCultures.GetValueOrDefault(value)!;
-        public static string ParseBase(CultureInfo value) => value.Name;
+        public static AutoConverter<CultureInfo, string> Converter => new(x => x.Name, x => AllCultures[x]);
     }
 
 

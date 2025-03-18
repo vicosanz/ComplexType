@@ -17,6 +17,13 @@ var serializeOptions = new JsonSerializerOptions
     WriteIndented = true
 };
 
+var converter = new ComplexType.AutoConverter<CultureInfo, string>(x => x.Name, x => new CultureInfo(x));
+
+var conv1 = converter.Convert(CultureInfo.CurrentCulture);
+var conv2 = converter.Convert(conv1);
+Console.WriteLine(conv1);
+Console.WriteLine(conv2);
+
 Console.WriteLine("Hello, World!");
 
 DateSerial dateSerial = new(new(2021, 10, 10));
@@ -76,28 +83,20 @@ public readonly partial record struct CultureData : IComplexType<CultureInfo, st
         return value;
     }
 
-    public static CultureInfo ParseBase(string value) => AllCultures.GetValueOrDefault(value)!;
-    public static string ParseBase(CultureInfo value) => value.Name;
+    public static AutoConverter<CultureInfo, string> Converter => new(x => x.Name, x => AllCultures[x]);
 }
 
 [ComplexType([EnumAdditionalConverters.Dapper, EnumAdditionalConverters.EFCore, EnumAdditionalConverters.NewtonsoftJson])]
 public readonly partial record struct DateSerial : IComplexType<Tuple<int, int, int>, string>
 {
-    public static Tuple<int, int, int> ParseBase(string value) => JsonSerializer.Deserialize<Tuple<int, int, int>>(value)!;
-    public static string ParseBase(Tuple<int, int, int> value) => JsonSerializer.Serialize(value);
+    public static AutoConverter<Tuple<int, int, int>, string> Converter => new(x => JsonSerializer.Serialize(x), x => JsonSerializer.Deserialize<Tuple<int, int, int>>(x)!);
 }
 
 [ComplexType([EnumAdditionalConverters.Dapper, EnumAdditionalConverters.EFCore, EnumAdditionalConverters.NewtonsoftJson])]
 public readonly partial record struct NonEmptyString
 {
-    public static string Validate(string value, [CallerArgumentExpression(nameof(value))] string? argumentName = null)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new ArgumentException("Value cannot be null or empty", argumentName);
-        }
-        return value;
-    }
+    public static string Validate(string value, [CallerArgumentExpression(nameof(value))] string? argumentName = null) => 
+        string.IsNullOrWhiteSpace(value) ? throw new ArgumentException("Value cannot be null or empty", argumentName) : value;
 
 }
 [ComplexType([EnumAdditionalConverters.Dapper, EnumAdditionalConverters.EFCore, EnumAdditionalConverters.NewtonsoftJson])]
@@ -146,7 +145,6 @@ public readonly partial record struct AccountBalance : IComplexType<decimal>
             > 1000000 => throw new ArgumentException("Value cannot be greater than 1000000", argumentName),
             _ => value
         };
-
     //public static decimal ParseBase(string value) => decimal.Parse(value);
     //public static string ParseBase(decimal value) => value.ToString();
 }
